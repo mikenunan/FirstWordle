@@ -11,7 +11,7 @@ let readLines (reader:StreamReader) =
             yield reader.ReadLine()
     }
 
-let filterAndProcessLinesFromUrlDownloadAsync (url:string) (filterToCandidates:(AsyncSeq<string> -> AsyncSeq<string>)) processLine =
+let GetCandidateWordsAsync (url:string) (filterToCandidates:(AsyncSeq<string> -> AsyncSeq<string>)) =
     async {
         use client = new HttpClient()
         use! response = client.GetAsync(url) |> Async.AwaitTask
@@ -19,12 +19,8 @@ let filterAndProcessLinesFromUrlDownloadAsync (url:string) (filterToCandidates:(
         use stream = content.ReadAsStream()
         use reader = new StreamReader(stream)
         let lines = reader |> readLines
-        let! filterAndProcess =
-            filterToCandidates lines
-                |> AsyncSeq.take(100)
-                |> AsyncSeq.iter processLine
-                |> Async.StartChild
-        do! filterAndProcess
+        let filtered = filterToCandidates lines
+        return filtered |> AsyncSeq.toListSynchronously
     }
 
 let rawLineToWord (rawLine:string) =
@@ -43,13 +39,13 @@ let filterToCandidates (lines:AsyncSeq<string>) =
         |> AsyncSeq.map rawLineToWord
         |> AsyncSeq.filter isCandidateWord
 
-let filterAndProcessLinesFromUrlAsync url =
+let processDictionaryFromUrlAsync url =
     async {
-        let! asyncJob = filterAndProcessLinesFromUrlDownloadAsync url filterToCandidates Console.WriteLine |> Async.StartChild
-        do! asyncJob
+        let! allCandidateWords = GetCandidateWordsAsync url filterToCandidates
+        allCandidateWords |> Console.WriteLine
     }
 
 [<EntryPoint>]
 let main argv =
-    filterAndProcessLinesFromUrlAsync dictionaryUrl |> Async.RunSynchronously
+    processDictionaryFromUrlAsync dictionaryUrl |> Async.RunSynchronously
     0
