@@ -52,14 +52,17 @@ let calculateLetterFrequencies (words:string list) =
 let computeWordScore (word:string) (letterCounts:Map<char,int>) =
     word.ToCharArray() |> Array.fold (fun score ch -> score + letterCounts[ch]) 0
 
-let calculateWordScores (allCandidateWords:string list) (letterCounts:Map<char,int>) =
+let calculateWordScores (allCandidateWords:string seq) (letterCounts:Map<char,int>) =
     allCandidateWords |> Seq.map (fun word -> (word, computeWordScore word letterCounts)) |> Map.ofSeq
 
 let processDictionaryFromUrlAsync url =
     async {
         let! allCandidateWords = GetCandidateWordsAsync url filterToCandidates
         let letterCounts = calculateLetterFrequencies allCandidateWords
-        let wordScores = calculateWordScores allCandidateWords letterCounts
+        let candidateWordsWithoutDuplicateLetters =
+            allCandidateWords
+                |> Seq.filter (fun word -> word.ToCharArray() |> Seq.distinct |> Seq.length > 4)
+        let wordScores = calculateWordScores candidateWordsWithoutDuplicateLetters letterCounts
         wordScores |> Console.WriteLine
     }
 
