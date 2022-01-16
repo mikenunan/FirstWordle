@@ -39,10 +39,21 @@ let filterToCandidates (lines:AsyncSeq<string>) =
         |> AsyncSeq.map rawLineToWord
         |> AsyncSeq.filter isCandidateWord
 
+let updateCountsForLetter (counts:Map<char,int>) (letter:char) =
+    counts.Add(letter, counts[letter] + 1)
+
+let updateCounts (word:string) (counts:Map<char,int>) =
+    word.ToCharArray() |> Array.fold updateCountsForLetter counts
+
+let calculateLetterFrequencies (words:string list) =
+    let counts = seq { 'A' .. 'Z' } |> Seq.map (fun letter -> (letter, 0)) |> Map.ofSeq
+    List.fold (fun counts word -> updateCounts word counts) counts words
+    
 let processDictionaryFromUrlAsync url =
     async {
         let! allCandidateWords = GetCandidateWordsAsync url filterToCandidates
-        allCandidateWords |> Console.WriteLine
+        let letterCounts = calculateLetterFrequencies allCandidateWords
+        letterCounts |> Console.WriteLine
     }
 
 [<EntryPoint>]
