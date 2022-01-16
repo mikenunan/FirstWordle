@@ -49,11 +49,18 @@ let calculateLetterFrequencies (words:string list) =
     let counts = seq { 'A' .. 'Z' } |> Seq.map (fun letter -> (letter, 0)) |> Map.ofSeq
     List.fold (fun counts word -> updateCounts word counts) counts words
     
+let computeWordScore (word:string) (letterCounts:Map<char,int>) =
+    word.ToCharArray() |> Array.fold (fun score ch -> score + letterCounts[ch]) 0
+
+let calculateWordScores (allCandidateWords:string list) (letterCounts:Map<char,int>) =
+    allCandidateWords |> Seq.map (fun word -> (word, computeWordScore word letterCounts)) |> Map.ofSeq
+
 let processDictionaryFromUrlAsync url =
     async {
         let! allCandidateWords = GetCandidateWordsAsync url filterToCandidates
         let letterCounts = calculateLetterFrequencies allCandidateWords
-        letterCounts |> Console.WriteLine
+        let wordScores = calculateWordScores allCandidateWords letterCounts
+        wordScores |> Console.WriteLine
     }
 
 [<EntryPoint>]
