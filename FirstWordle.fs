@@ -1,18 +1,41 @@
-﻿open System.Net
+﻿open FSharp.Control
 open System
 open System.IO
+open System.Net.Http
 
-let fetchUrl readHtml url =
-    let request = WebRequest.Create(Uri(url))
-    use response = request.GetResponse()
-    use stream = response.GetResponseStream()
-    use reader = new StreamReader(stream)
-    readHtml reader url
+let dictionaryUrl = "https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/en/index.dic"
 
-let readHtml (reader:StreamReader) url = 
-    let html = reader.ReadToEnd()
-    let html1000 = html.Substring(0,1000)
-    printfn "Downloaded %s. First 1000 is %s" url html1000
-    html
+let readLines (reader:StreamReader) =
+    asyncSeq {
+        while not reader.EndOfStream do
+            yield reader.ReadLine()
+    }
 
-let dictionary = fetchUrl readHtml "https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/en/index.dic"
+let filterAndProcessLinesFromUrlDownloadAsync (url:string) (filterLines:(AsyncSeq<string> -> AsyncSeq<string>)) processLine =
+    async {
+        use client = new HttpClient()
+        use! response = client.GetAsync(url) |> Async.AwaitTask
+        use content = response.Content
+        use stream = content.ReadAsStream()
+        use reader = new StreamReader(stream)
+        let lines = reader |> readLines
+        let! filterAndProcess =
+            filterLines lines
+                |> AsyncSeq.iter processLine
+                |> Async.StartChild
+        do! filterAndProcess
+    }
+
+let filterLines (lines:AsyncSeq<string>) =
+    lines |> AsyncSeq.take(100)
+
+let filterAndProcessLinesFromUrlAsync url =
+    async {
+        let! x = filterAndProcessLinesFromUrlDownloadAsync url filterLines Console.WriteLine |> Async.StartChild
+        do! x
+    }
+
+[<EntryPoint>]
+let main argv =
+    filterAndProcessLinesFromUrlAsync dictionaryUrl |> Async.RunSynchronously
+    0
