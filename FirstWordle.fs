@@ -63,7 +63,10 @@ let processDictionaryFromUrlAsync url =
             allCandidateWords
                 |> Seq.filter (fun word -> word.ToCharArray() |> Seq.distinct |> Seq.length > 4)
         let wordScores = calculateWordScores candidateWordsWithoutDuplicateLetters letterCounts
-        wordScores |> Console.WriteLine
+        let maxScore = (wordScores |> Seq.maxBy (fun pair -> pair.Value)).Value
+        Console.WriteLine($"Max score is {maxScore}, top ten words are:")
+        let sortedWordScores = wordScores |> Seq.sortByDescending (fun pair -> pair.Value)
+        sortedWordScores |> Seq.take 10 |> Seq.iter Console.WriteLine
     }
 
 [<EntryPoint>]
