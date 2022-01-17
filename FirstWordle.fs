@@ -77,6 +77,10 @@ let processDictionaryFromUrlAsync url wordsToPrint =
                             | Some(ranking) -> $"{word} scores {wordScores[word]}, ranks at position {ranking} out of {wordScores.Count}"
                             | None -> $"No match for word {word} (out of {wordScores.Count} possibilities)"
                     Console.WriteLine(message))
+        Console.WriteLine("Overall letter counts across all candidate words:")
+        letterCounts
+            |> Seq.sortByDescending (fun pair -> pair.Value)
+            |> Seq.iter (fun pair -> Console.WriteLine($"{pair.Key}, {pair.Value}"))
     }
 
 [<EntryPoint>]
