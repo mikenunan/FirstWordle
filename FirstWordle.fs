@@ -75,7 +75,7 @@ let processDictionaryFromUrlAsync url wordsToPrint =
                     let message =
                         match rankingOption with
                             | Some(ranking) -> $"{word} scores {wordScores[word]}, ranks at position {ranking} out of {wordScores.Count}"
-                            | None -> $"No match for word {word} (out of {wordScores.Count} possibilities)"
+                            | None -> $"{word} scores {computeWordScore word letterCounts}, but no match for word {word} in ranking"
                     Console.WriteLine(message))
         Console.WriteLine("Overall letter counts across all candidate words:")
         letterCounts
