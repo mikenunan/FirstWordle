@@ -55,7 +55,7 @@ let computeWordScore (word:string) (letterCounts:Map<char,int>) =
 let calculateWordScores allCandidateWords letterCounts =
     allCandidateWords |> Seq.map (fun word -> (word, computeWordScore word letterCounts)) |> Map.ofSeq
 
-let processDictionaryFromUrlAsync url =
+let processDictionaryFromUrlAsync url wordsToPrint =
     async {
         let! allCandidateWords = GetCandidateWordsAsync url filterToCandidates
         let letterCounts = calculateLetterFrequencies allCandidateWords
@@ -67,9 +67,19 @@ let processDictionaryFromUrlAsync url =
         Console.WriteLine($"Max score is {maxScore}, top ten words are:")
         let sortedWordScores = wordScores |> Seq.sortByDescending (fun pair -> pair.Value)
         sortedWordScores |> Seq.take 10 |> Seq.iter Console.WriteLine
+        wordsToPrint
+            |> Seq.iter
+                (fun (wordAnyCase:string) ->
+                    let word = wordAnyCase.ToUpperInvariant()
+                    let rankingOption = sortedWordScores |> Seq.tryFindIndex (fun pair -> pair.Key = word)
+                    let message =
+                        match rankingOption with
+                            | Some(ranking) -> $"{word} scores {wordScores[word]}, ranks at position {ranking} out of {wordScores.Count}"
+                            | None -> $"No match for word {word} (out of {wordScores.Count} possibilities)"
+                    Console.WriteLine(message))
     }
 
 [<EntryPoint>]
 let main argv =
-    processDictionaryFromUrlAsync dictionaryUrl |> Async.RunSynchronously
+    processDictionaryFromUrlAsync dictionaryUrl argv |> Async.RunSynchronously
     0
