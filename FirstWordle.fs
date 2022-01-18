@@ -1,34 +1,19 @@
 ﻿open FSharp.Control
 open System
 open System.IO
-open System.Net.Http
-
-let playableWordListUrl = "https://raw.githubusercontent.com/TylerGlaiel/wordlebot/main/wordlist_guesses.txt"
 
 let readLines (reader:StreamReader) =
     asyncSeq {
         while not reader.EndOfStream do
-            yield reader.ReadLine()
+            yield reader.ReadLine().ToUpperInvariant()
     }
 
-let GetFilteredWordsAsync (url:string) (filter:(AsyncSeq<string> -> AsyncSeq<string>)) =
+let GetFilteredWordsAsync (path:string) =
     async {
-        use client = new HttpClient()
-        use! response = client.GetAsync(url) |> Async.AwaitTask
-        use content = response.Content
-        use stream = content.ReadAsStream()
+        use stream = new FileStream(path, FileMode.Open)
         use reader = new StreamReader(stream)
-        return reader |> readLines |> filter |> AsyncSeq.toListSynchronously
+        return reader |> readLines |> AsyncSeq.toListSynchronously
     }
-
-let isCandidateWord (word:string) =
-    word.Length = 5 &&
-    word.ToCharArray() |> Seq.forall (fun ch -> ch >= 'A' && ch <= 'Z')
-
-let filterToCandidates (lines:AsyncSeq<string>) =
-    lines
-        |> AsyncSeq.map (fun word -> word.ToUpperInvariant())
-        |> AsyncSeq.filter isCandidateWord
 
 let updateCountsForLetter (counts:Map<char,int>) letter =
     counts.Add(letter, counts[letter] + 1)
@@ -43,19 +28,19 @@ let calculateLetterFrequencies words =
 let computeWordScore (word:string) (letterCounts:Map<char,int>) =
     word.ToCharArray() |> Array.fold (fun score ch -> score + letterCounts[ch]) 0
 
-let calculateWordScores allCandidateWords letterCounts =
-    allCandidateWords |> Seq.map (fun word -> (word, computeWordScore word letterCounts)) |> Map.ofSeq
+let calculateWordScores words letterCounts =
+    words |> Seq.map (fun word -> (word, computeWordScore word letterCounts)) |> Map.ofSeq
 
-let processPlayableWordListFromUrlAsync url wordsToPrint =
+let processPlayableWordListFromAsync wordsToPrint =
     async {
-        let! allCandidateWords = GetFilteredWordsAsync url filterToCandidates
-        let letterCounts = calculateLetterFrequencies allCandidateWords
-        let candidateWordsWithoutDuplicateLetters =
-            allCandidateWords
+        let! possibleGuesses = GetFilteredWordsAsync "wordlist_guesses.txt"
+        let letterCounts = calculateLetterFrequencies possibleGuesses
+        let possibleGuessesWithoutDuplicateLetters =
+            possibleGuesses
                 |> Seq.filter (fun word -> word.ToCharArray() |> Seq.distinct |> Seq.length > 4)
                 |> Seq.toList
-        Console.WriteLine($"There are {allCandidateWords.Length} playable words, of which {candidateWordsWithoutDuplicateLetters.Length} have no duplicate letters")
-        let wordScores = calculateWordScores candidateWordsWithoutDuplicateLetters letterCounts
+        Console.WriteLine($"There are {possibleGuesses.Length} playable words, of which {possibleGuessesWithoutDuplicateLetters.Length} have no duplicate letters")
+        let wordScores = calculateWordScores possibleGuessesWithoutDuplicateLetters letterCounts
         let maxScore = (wordScores |> Seq.maxBy (fun pair -> pair.Value)).Value
         Console.WriteLine($"Max score is {maxScore}, top ten words are:")
         let sortedWordScores = wordScores |> Seq.sortByDescending (fun pair -> pair.Value)
@@ -78,5 +63,5 @@ let processPlayableWordListFromUrlAsync url wordsToPrint =
 
 [<EntryPoint>]
 let main argv =
-    processPlayableWordListFromUrlAsync playableWordListUrl argv |> Async.RunSynchronously
+    processPlayableWordListFromAsync argv |> Async.RunSynchronously
     0

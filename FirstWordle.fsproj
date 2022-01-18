@@ -6,8 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="sample-output.txt" />
+    <Content Include="wordlist_guesses.txt" />
+    <Content Include="wordlist_solutions.txt" />
+    <None Include="README.md" />
     <Compile Include="FirstWordle.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
