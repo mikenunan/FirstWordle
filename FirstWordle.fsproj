@@ -7,8 +7,12 @@
 
   <ItemGroup>
     <Content Include="sample-output.txt" />
-    <Content Include="wordlist_guesses.txt" />
-    <Content Include="wordlist_solutions.txt" />
+    <Content Include="wordlist_guesses.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="wordlist_solutions.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="README.md" />
     <Compile Include="FirstWordle.fs" />
   </ItemGroup>
