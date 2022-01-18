@@ -62,6 +62,8 @@ let processDictionaryFromUrlAsync url wordsToPrint =
         let candidateWordsWithoutDuplicateLetters =
             allCandidateWords
                 |> Seq.filter (fun word -> word.ToCharArray() |> Seq.distinct |> Seq.length > 4)
+                |> Seq.toList
+        Console.WriteLine($"There are {allCandidateWords.Length} playable words, of which {candidateWordsWithoutDuplicateLetters.Length} have no duplicate letters")
         let wordScores = calculateWordScores candidateWordsWithoutDuplicateLetters letterCounts
         let maxScore = (wordScores |> Seq.maxBy (fun pair -> pair.Value)).Value
         Console.WriteLine($"Max score is {maxScore}, top ten words are:")
