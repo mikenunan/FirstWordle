@@ -24,8 +24,11 @@ let updateCounts (word:string) (counts:Map<char,int>) =
 
 let calculateLetterFrequencies words =
     let counts = seq { 'A' .. 'Z' } |> Seq.map (fun letter -> (letter, 0)) |> Map.ofSeq
-    List.fold (fun counts word -> updateCounts word counts) counts words
+    Set.fold (fun counts word -> updateCounts word counts) counts words
     
+let hasNoDuplicateLetters (word:string) =
+    word.ToCharArray() |> Seq.distinct |> Seq.length > 4
+
 let computeWordScore (word:string) (letterCounts:Map<char,int>) =
     word.ToCharArray() |> Array.fold (fun score ch -> score + letterCounts[ch]) 0
 
@@ -34,25 +37,39 @@ let calculateWordScores words letterCounts =
 
 let processPlayableWordListFromAsync wordsToPrint =
     async {
-        let! possibleGuesses = GetFilteredWordsAsync "wordlist_guesses.txt"
-        let letterCounts = calculateLetterFrequencies possibleGuesses
-        let possibleGuessesWithoutDuplicateLetters =
+        let! possibleGuessesList = GetFilteredWordsAsync "wordlist_guesses.txt"
+        let possibleGuesses = possibleGuessesList |> Set.ofSeq
+        let guessesWithoutDuplicateLetters =
             possibleGuesses
-                |> Seq.filter (fun word -> word.ToCharArray() |> Seq.distinct |> Seq.length > 4)
-                |> Set.ofSeq
-        Console.WriteLine($"There are {possibleGuesses.Length} playable words, of which {possibleGuessesWithoutDuplicateLetters.Count} have no duplicate letters,")
-        let! possibleSolutionWords = GetFilteredWordsAsync "wordlist_solutions.txt"
-        let holeInOneWords =
-            possibleSolutionWords
-                |> Seq.where (fun word -> possibleGuessesWithoutDuplicateLetters.Contains(word))
+                |> Seq.filter hasNoDuplicateLetters
                 |> Seq.toList
-        Console.WriteLine($"and of {possibleSolutionWords.Length} possible solution words {holeInOneWords.Length} are playable 'hole-in-one' words")
-        let wordScores = calculateWordScores possibleGuessesWithoutDuplicateLetters letterCounts
+        let! possibleSolutionWords = GetFilteredWordsAsync "wordlist_solutions.txt"
+        let solutionWordsWithoutDuplicateLetters =
+            possibleSolutionWords
+                |> Seq.filter hasNoDuplicateLetters
+                |> Seq.toList
+        let nonPlayableSolutionWords =
+            possibleSolutionWords
+                |> Seq.except possibleGuesses
+                |> Seq.toList
         if nonPlayableSolutionWords.Length > 0 then failwith "Non-playable solution words should not exist"
+        let letterCounts = calculateLetterFrequencies possibleGuesses
+        let wordScores = calculateWordScores guessesWithoutDuplicateLetters letterCounts
         let maxScore = (wordScores |> Seq.maxBy (fun pair -> pair.Value)).Value
-        Console.WriteLine($"Among first word choices the max score is {maxScore}, top ten words are:")
-        let sortedWordScores = wordScores |> Seq.sortByDescending (fun pair -> pair.Value)
-        sortedWordScores |> Seq.take 10 |> Seq.iter Console.WriteLine
+        let sortedWordScores =
+            wordScores
+                |> Seq.sortByDescending (fun pair -> pair.Value)
+        Console.WriteLine()
+        Console.Write($"There are {possibleGuesses.Count} playable words (all of them are solution words)")
+        Console.WriteLine($" of which {guessesWithoutDuplicateLetters.Length} have no duplicate letters,")
+        Console.Write($"and of {possibleSolutionWords.Length} possible solution words")
+        Console.WriteLine($" {solutionWordsWithoutDuplicateLetters.Length} have no duplicate letters")
+        Console.WriteLine()
+        Console.WriteLine($"Among first word choices the max score is {maxScore}, here's the top ten:")
+        sortedWordScores
+            |> Seq.take 10
+            |> Seq.iter Console.WriteLine
+        Console.WriteLine()
         wordsToPrint
             |> Seq.iter
                 (fun (wordAnyCase:string) ->
@@ -63,10 +80,12 @@ let processPlayableWordListFromAsync wordsToPrint =
                             | Some(ranking) -> $"{word} scores {wordScores[word]}, ranks at position {ranking} out of {wordScores.Count}"
                             | None -> $"{word} scores {computeWordScore word letterCounts}, but no match for word {word} in ranking"
                     Console.WriteLine(message))
+        Console.WriteLine()
         Console.WriteLine("Overall letter counts across all candidate words:")
         letterCounts
             |> Seq.sortByDescending (fun pair -> pair.Value)
             |> Seq.iter (fun pair -> Console.WriteLine($"{pair.Key}, {pair.Value}"))
+        Console.WriteLine()
     }
 
 [<EntryPoint>]
