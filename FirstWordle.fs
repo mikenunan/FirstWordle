@@ -3,7 +3,7 @@ open System
 open System.IO
 open System.Net.Http
 
-let dictionaryUrl = "https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/en/index.dic"
+let playableWordListUrl = "https://raw.githubusercontent.com/TylerGlaiel/wordlebot/main/wordlist_guesses.txt"
 
 let readLines (reader:StreamReader) =
     asyncSeq {
@@ -11,24 +11,15 @@ let readLines (reader:StreamReader) =
             yield reader.ReadLine()
     }
 
-let GetCandidateWordsAsync (url:string) (filterToCandidates:(AsyncSeq<string> -> AsyncSeq<string>)) =
+let GetFilteredWordsAsync (url:string) (filter:(AsyncSeq<string> -> AsyncSeq<string>)) =
     async {
         use client = new HttpClient()
         use! response = client.GetAsync(url) |> Async.AwaitTask
         use content = response.Content
         use stream = content.ReadAsStream()
         use reader = new StreamReader(stream)
-        let lines = reader |> readLines
-        let filtered = filterToCandidates lines
-        return filtered |> AsyncSeq.toListSynchronously
+        return reader |> readLines |> filter |> AsyncSeq.toListSynchronously
     }
-
-let rawLineToWord (rawLine:string) =
-    let trimmedLine = rawLine.ToUpperInvariant().Trim()
-    let slashIndex = trimmedLine.IndexOf('/')
-    if slashIndex < 0
-        then trimmedLine
-        else trimmedLine.Substring(0, slashIndex)
 
 let isCandidateWord (word:string) =
     word.Length = 5 &&
@@ -36,7 +27,7 @@ let isCandidateWord (word:string) =
 
 let filterToCandidates (lines:AsyncSeq<string>) =
     lines
-        |> AsyncSeq.map rawLineToWord
+        |> AsyncSeq.map (fun word -> word.ToUpperInvariant())
         |> AsyncSeq.filter isCandidateWord
 
 let updateCountsForLetter (counts:Map<char,int>) letter =
@@ -55,9 +46,9 @@ let computeWordScore (word:string) (letterCounts:Map<char,int>) =
 let calculateWordScores allCandidateWords letterCounts =
     allCandidateWords |> Seq.map (fun word -> (word, computeWordScore word letterCounts)) |> Map.ofSeq
 
-let processDictionaryFromUrlAsync url wordsToPrint =
+let processPlayableWordListFromUrlAsync url wordsToPrint =
     async {
-        let! allCandidateWords = GetCandidateWordsAsync url filterToCandidates
+        let! allCandidateWords = GetFilteredWordsAsync url filterToCandidates
         let letterCounts = calculateLetterFrequencies allCandidateWords
         let candidateWordsWithoutDuplicateLetters =
             allCandidateWords
@@ -87,5 +78,5 @@ let processDictionaryFromUrlAsync url wordsToPrint =
 
 [<EntryPoint>]
 let main argv =
-    processDictionaryFromUrlAsync dictionaryUrl argv |> Async.RunSynchronously
+    processPlayableWordListFromUrlAsync playableWordListUrl argv |> Async.RunSynchronously
     0
