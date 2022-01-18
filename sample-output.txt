@@ -1,42 +1,50 @@
 ❯ dotnet run SOARE ROATE RAISE
-Max score is 9492, top ten words are:
-[AROSE, 9492]
-[AIRES, 9397]
-[ARIES, 9397]
-[ARISE, 9397]
-[RAISE, 9397]
-[ERATO, 9395]
-[ORATE, 9395]
-[ARIEL, 9361]
-[ARTIE, 9300]
-[IRATE, 9300]
-SOARE scores 9492, but no match for word SOARE in ranking
-ROATE scores 9395, but no match for word ROATE in ranking
-RAISE scores 9397, ranks at position 4 out of 2945
+
+There are 12972 playable words (all of them are solution words) of which 8322 have no duplicate letters,
+and of 2315 possible solution words 1566 have no duplicate letters
+and of *those* 1566 are playable 'hole-in-one' words
+
+
+Among first word choices the max score is 27913, top ten words are:
+[AEROS, 27913]
+[AROSE, 27913]
+[SOARE, 27913]
+[AESIR, 27234]
+[ARISE, 27234]
+[RAISE, 27234]
+[REAIS, 27234]
+[SERAI, 27234]
+[ALOES, 27126]
+[STOAE, 27050]
+SOARE scores 27913, ranks at position 2 out of 8322
+ROATE scores 24543, ranks at position 263 out of 8322
+RAISE scores 27234, ranks at position 5 out of 8322
+
 Overall letter counts across all candidate words:
-E, 2401
-A, 2383
-R, 1702
-O, 1593
-I, 1498
-S, 1413
-L, 1377
-N, 1327
-T, 1316
-U, 919
-Y, 904
-C, 899
-D, 804
-H, 767
-M, 738
-P, 683
-B, 637
-G, 605
-K, 453
-F, 372
-W, 335
-V, 300
-Z, 143
-X, 122
-J, 116
-Q, 53
+
+S, 6665
+E, 6662
+A, 5990
+O, 4438
+R, 4158
+I, 3759
+L, 3371
+T, 3295
+N, 2952
+U, 2511
+D, 2453
+Y, 2074
+C, 2028
+P, 2019
+M, 1976
+H, 1760
+G, 1644
+B, 1627
+K, 1505
+F, 1115
+W, 1039
+V, 694
+Z, 434
+J, 291
+X, 288
+Q, 112
