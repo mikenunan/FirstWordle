@@ -48,6 +48,7 @@ let processPlayableWordListFromAsync wordsToPrint =
                 |> Seq.toList
         Console.WriteLine($"and of {possibleSolutionWords.Length} possible solution words {holeInOneWords.Length} are playable 'hole-in-one' words")
         let wordScores = calculateWordScores possibleGuessesWithoutDuplicateLetters letterCounts
+        if nonPlayableSolutionWords.Length > 0 then failwith "Non-playable solution words should not exist"
         let maxScore = (wordScores |> Seq.maxBy (fun pair -> pair.Value)).Value
         Console.WriteLine($"Among first word choices the max score is {maxScore}, top ten words are:")
         let sortedWordScores = wordScores |> Seq.sortByDescending (fun pair -> pair.Value)
