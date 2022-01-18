@@ -1,4 +1,5 @@
 ﻿open FSharp.Control
+open FSharp.Collections
 open System
 open System.IO
 
@@ -38,11 +39,17 @@ let processPlayableWordListFromAsync wordsToPrint =
         let possibleGuessesWithoutDuplicateLetters =
             possibleGuesses
                 |> Seq.filter (fun word -> word.ToCharArray() |> Seq.distinct |> Seq.length > 4)
+                |> Set.ofSeq
+        Console.WriteLine($"There are {possibleGuesses.Length} playable words, of which {possibleGuessesWithoutDuplicateLetters.Count} have no duplicate letters,")
+        let! possibleSolutionWords = GetFilteredWordsAsync "wordlist_solutions.txt"
+        let holeInOneWords =
+            possibleSolutionWords
+                |> Seq.where (fun word -> possibleGuessesWithoutDuplicateLetters.Contains(word))
                 |> Seq.toList
-        Console.WriteLine($"There are {possibleGuesses.Length} playable words, of which {possibleGuessesWithoutDuplicateLetters.Length} have no duplicate letters")
+        Console.WriteLine($"and of {possibleSolutionWords.Length} possible solution words {holeInOneWords.Length} are playable 'hole-in-one' words")
         let wordScores = calculateWordScores possibleGuessesWithoutDuplicateLetters letterCounts
         let maxScore = (wordScores |> Seq.maxBy (fun pair -> pair.Value)).Value
-        Console.WriteLine($"Max score is {maxScore}, top ten words are:")
+        Console.WriteLine($"Among first word choices the max score is {maxScore}, top ten words are:")
         let sortedWordScores = wordScores |> Seq.sortByDescending (fun pair -> pair.Value)
         sortedWordScores |> Seq.take 10 |> Seq.iter Console.WriteLine
         wordsToPrint
