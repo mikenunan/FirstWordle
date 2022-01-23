@@ -75,10 +75,14 @@ let processPlayableWordListFromAsync wordsToPrint =
                 (fun (wordAnyCase:string) ->
                     let word = wordAnyCase.ToUpperInvariant()
                     let rankingOption = sortedWordScores |> Seq.tryFindIndex (fun pair -> pair.Key = word)
+                    let status =
+                        if possibleSolutionWords |> Seq.contains word
+                            then "(is solution word: YES!)"
+                            else "(is solution word: NO)"
                     let message =
                         match rankingOption with
-                            | Some(ranking) -> $"{word} scores {wordScores[word]}, ranks at position {ranking} out of {wordScores.Count}"
-                            | None -> $"{word} scores {computeWordScore word letterCounts}, but no match for word {word} in ranking"
+                            | Some(ranking) -> $"{word} scores {wordScores[word]}, ranks at position {ranking} out of {wordScores.Count} {status}"
+                            | None -> $"{word} scores {computeWordScore word letterCounts}, but no match for word {word} in ranking {status}"
                     Console.WriteLine(message))
         Console.WriteLine()
         Console.WriteLine("Overall letter counts across all candidate words:")
